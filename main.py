@@ -401,6 +401,9 @@ class Application(ttk.Frame):
                     if lines_submitted >= 2:
                         self._submit.submitting = False
                         lines_submitted = 0
+            elif msg.startswith(b"T"):
+                temp = int(msg[1:].strip())
+                self._temperature.current_temp = temp
             else:
                 logger.warning(f"Received unrecognized message: {msg.decode()}")
 
