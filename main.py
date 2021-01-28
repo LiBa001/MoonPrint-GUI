@@ -158,6 +158,7 @@ class Extruder(ttk.Frame):
         self.master = master
 
         self._extruder = tk.DoubleVar()
+        self._multiplier = tk.IntVar(value=10)
         self._state = ExtruderState.IDLE
 
         self._create_widgets()
@@ -167,18 +168,23 @@ class Extruder(ttk.Frame):
             self, text="Extruder", font="Roboto 10 bold"
         ).grid(column=0, row=0, sticky=(W, E))
 
+        ttk.Label(self, text="Multiplier").grid(column=0, row=1, sticky=(W, E))
+        ttk.Spinbox(
+            self, textvariable=self._multiplier, from_=1, to=1000, width=5
+        ).grid(column=1, row=1, sticky=(W, E), padx=5)
+
         self._insert_btn = ttk.Button(
             self, text="Insert Filament", command=self._insert
         )
-        self._insert_btn.grid(column=0, row=1, sticky=(W, E))
+        self._insert_btn.grid(column=2, row=1, sticky=(W, E))
 
         self._remove_btn = ttk.Button(
             self, text="Remove Filament", command=self._remove
         )
-        self._remove_btn.grid(column=1, row=1, sticky=(W, E))
+        self._remove_btn.grid(column=3, row=1, sticky=(W, E))
 
         self._stop_btn = ttk.Button(self, text="Stop", command=self._stop)
-        self._stop_btn.grid(column=2, row=1, sticky=(W, E))
+        self._stop_btn.grid(column=4, row=1, sticky=(W, E))
 
         self._enable()
 
@@ -209,7 +215,9 @@ class Extruder(ttk.Frame):
         return self._extruder.get()
 
     def run(self):
-        self._extruder += self._state.value
+        self._extruder.set(
+            self._extruder.get() + self._state.value * self._multiplier.get()
+        )
 
 
 class Temperature(ttk.Frame):
@@ -389,7 +397,11 @@ class Application(ttk.Frame):
         while serial.is_open:
             msg = serial.readline().strip()
             if msg == b"OK":
+                if self._submit.sync or self._submit.submitting:
+                    self._extruder.run()
+
                 gcode = next(gcode_generator)
+
                 if self._submit.sync:
                     logger.debug(f"syncing with gcode: {gcode}")
                     serial.write(gcode.encode())
