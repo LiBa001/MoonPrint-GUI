@@ -6,8 +6,14 @@ import traceback
 import logging
 from enum import Enum
 import threading
+import sys
+import os
 
 logger = logging.getLogger(__name__)
+
+if bool(os.getenv("DEBUG", False)):
+    logger.addHandler(logging.StreamHandler(sys.stdout))
+    logger.setLevel(logging.DEBUG)
 
 
 class ExtruderState(Enum):
@@ -386,7 +392,7 @@ class Application(ttk.Frame):
 
             yield (
                 "M104".ljust(5, " ") + "S"
-                + self.format_value(self._temperature.target_temp) + "\n"
+                + self.format_value(self._temperature.target_temp, 3) + "\n"
             )
 
     def run(self):
@@ -420,8 +426,8 @@ class Application(ttk.Frame):
                 logger.warning(f"Received unrecognized message: {msg.decode()}")
 
     @staticmethod
-    def format_value(value):
-        return str(value).rjust(7, "0")[:7]
+    def format_value(value, width=7):
+        return str(value).rjust(width, "0")[:width]
 
 
 if __name__ == "__main__":
